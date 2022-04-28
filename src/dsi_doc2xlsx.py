@@ -1,3 +1,7 @@
+############################
+# Written by: Faruk Gurbuz #
+# 26.04.2022 MIT License   #
+############################
 try:
     import xlsxwriter
     import docx2txt
@@ -17,7 +21,7 @@ class read_DSI_doc_file:
             directory of the doc file
 
     Methods:
-        doc2text:doc formatli DSI akim yillik sayfasini text ve tex listesine cevirir.
+        doc2text: doc formatli DSI akim yillik sayfasini text ve tex listesine cevirir.
 
         find_index_YagisAlani: text list'te scan_start ve scan_end arasindaki stringleri tarar ve 
             'YAĞIŞ ALANI' kelimesini arar.  
@@ -94,8 +98,7 @@ class read_DSI_doc_file:
 
     @staticmethod    
     def doc2text(path):
-
-        """doc formatli DSI akim yillik sayfasini text ve tex listesine cevirir.
+        """ doc formatli DSI akim yillik sayfasini text ve tex listesine cevirir.
         
         Parameters:
             path: doc file directory
