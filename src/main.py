@@ -14,42 +14,19 @@ from rich.style import Style
 from rich.markdown import Markdown
 from rich.prompt import Prompt
 
-from rich.progress import (
-    BarColumn,
-    DownloadColumn,
-    Progress,
-    TaskID,
-    TextColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-)
 
-progress = Progress(
-    TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
-    BarColumn(bar_width=None),
-    "[progress.percentage]{task.percentage:>3.1f}%",
-    "•",
-    DownloadColumn(),
-    "•",
-    TransferSpeedColumn(),
-    "•",
-    TimeRemainingColumn()
-)
-
-def read_write_doc(file, path2doc, path2save, t_id:TaskID):
+def read_write_doc(file, path2doc, path2save, ID):
     name = file.split('.')[0]
     _path = os.path.join(path2doc, file)
     temp = read_DSI_doc_file(_path)
     path_ = os.path.join(path2save, f'{name}.xlsx')
     temp.write_xlsx(path_)
-    progress.update(t_id, advance=1)
-    progress.console.log(f"Kaydedildi| {path_}")
+    console.log(f"[{ID[0]+1} - {ID[1]}]Kaydedildi| {path_}")
 
 def progress_writing(files, path2doc, path2save):
-    with progress:
-        for file in files:
-            t_id= progress.add_task('[cyan]Çalışıyor...', filename=file, total=len(files))
-            read_write_doc(file, path2doc, path2save, t_id)
+    n = len(files)
+    for i, file in enumerate(files):
+        read_write_doc(file, path2doc, path2save, ID=[i, n])
 
 def prompt_create_directory(path2create):  
     """ Yeni Klasör oluşturmak için kullanıcı girdisi alır.    
@@ -74,6 +51,7 @@ def prompt_create_directory(path2create):
         prompt_create_directory(path2create) 
 
 def main():
+    global console
     console = Console()
     ######Title
     style = Style(color="purple4", bgcolor="black", bold=True)
