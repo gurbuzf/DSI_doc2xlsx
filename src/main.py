@@ -50,6 +50,8 @@ def prompt_create_directory(path2create):
         print("Lütfen geçerli bir seçim yapınız! ['evet' 'e' 'yes' 'y' 'hayır' 'h' 'no' 'n']")
         prompt_create_directory(path2create) 
 
+
+
 def main():
     global console
     console = Console()
@@ -80,7 +82,14 @@ def main():
     print(txt2)
     ##########################################
 
+
     #####File/Folder management
+    # print("[bold yellow]![/bold yellow] 1: Ayrıntılı istasyon metaverisi (anahtar eğrisi vb.) içeren dosya tipi \n 2: Başlığında başkanlık-şube bilgisi olan dosya tipi")
+    
+    # doc_type = console.input("[bold green]1- Dönüştürmek istediğiniz dosya tipini giriniz! [1:] \n\n • Dosya Tipi:")
+
+    print("[bold red]Dönüştümek istediğiniz dosyalar kapalı olmalıdır![/bold red]")
+
     path2doc = console.input("[bold green]1- Lütfen .doc uzantılı dosyaların bulunduğu klasörün dosya yolunu giriniz! \n\n • DİZİN-oku:")
     if os.path.isdir(path2doc):       
         pass
@@ -99,6 +108,7 @@ def main():
 
     ######Transformation        
     files = [d for d in os.listdir(path2doc) if os.path.isfile(os.path.join(path2doc, d)) and d.endswith('doc')]
+    files = [d for d in files if d[0]!='~']
     print("\n[yellow] BAŞLADI  Saat:" + datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
 
     print(f'[bold yellow][+][/bold yellow] {path2doc} dizinindeki dosyalar okunuyor...')

@@ -21,7 +21,7 @@ class read_DSI_doc_file:
             directory of the doc file
 
     Methods:
-        doc2text: doc formatli DSI akim yillik sayfasini text ve tex listesine cevirir.
+        doc2text: doc formatli DSI akim yillik sayfasini text listesine cevirir.
 
         find_index_YagisAlani: text list'te scan_start ve scan_end arasindaki stringleri tarar ve 
             'YAĞIŞ ALANI' kelimesini arar.  
@@ -33,9 +33,15 @@ class read_DSI_doc_file:
     def __init__(self, path):
         self.path = path
         text_list = self.doc2text(self.path)
-        self.parse_file(text_list)
+
+        if text_list[0] == 'DSİ ETÜT PLANLAMA VE TAHSİSLER DAİRESİ BAŞKANLIĞI':
+            self.parse_file_type2(text_list)
+            self.docfile_type = 2
+        else:
+            self.parse_file_type1(text_list)
+            self.docfile_type = 1
     
-    def parse_file(self, text_list):
+    def parse_file_type1(self, text_list):
         """doc formatli DSI akim yillik sayfasindan tum verileri alir.
         
         Parameters:
@@ -93,6 +99,70 @@ class read_DSI_doc_file:
                     self.streamflow[i][1]] + self.streamflow[i][2:]
 
         self.footnote = ' '.join(text_list [-2].strip().split())
+        
+        return 1
+
+    def parse_file_type2(self, text_list):
+        """doc formatli DSI akim yillik sayfasindan tum verileri alir.
+        
+        Parameters:
+            text_list:list, 
+                doc2text methodunun ciktisi olan ve doc dosyasindaki satirlari 
+                    iceren liste
+
+        Returns:
+            None
+        
+        """
+        print('This is second file type!')
+        self.watershed = text_list[12].strip() 
+        # Istasyon_Kodu Istasyon_Adi
+        self.station = text_list[8].strip() + ' ' + text_list[4].strip() 
+        # Istasyon_kodu 
+        self.sta_number = text_list[8].strip() 
+        # Istasyon_Adi
+        self.sta_name = text_list[4].strip() 
+        #   YAĞIŞ ALANI  
+        self.area = text_list[6].split()[0]  
+        #   YAKLAŞIK KOT  	
+        self.altitude = text_list[10].split()[0]
+        #   KOORDINAT
+        self.coords = text_list[18].split('-')[0] + 'oğu-' + text_list[18].split('-')[1] + 'uzey' 
+        self.coords = self.coords.strip()
+        #   YERI
+        self.location = text_list[16].strip() 
+        
+        #   GÖZLEM SÜRESİ
+        self.obs_duration = ''
+        #   ORTALAMA AKIMLAR
+        self.mean_flow = '' 
+        #    ANLIK EN ÇOK VE EN AZ AKIMLAR - Tablo
+        self.stats_InstFlow = '' 
+        #   Anahtar Eğrisi
+        self.rating_info = '' 
+        #   Anahtar Eğrisi Tablo
+        self.rating_table = ''
+
+        #   Akim verileri - Tablo
+        header = ["Gün","Ekim","Kasım","Aralık","Ocak","Şubat",\
+          "Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül"]
+        str_index = 36
+        structured_data = []
+        for i in range(31):
+            
+            m1 = [j.strip() for j in text_list[str_index:str_index+13]]
+            m1 = [j if j!='--' else '------' for j in m1 ]
+            structured_data.append(m1)
+            str_index += 13
+        structured_data.insert(0, header)
+        self.flow_info = f'{text_list[22].strip()} yılı Akım verileri m3/sn olarak'
+        
+        empty_index = [31, 37, 43, 49, 55, 61, 67, 69]  #TODO: make it not hard coded!
+        
+        self.streamflow = structured_data
+        #   [AKIM mm.] ve [MİL. M3] satirlarinda duzeltme
+
+        self.footnote = None
         
         return 1
 
@@ -186,44 +256,59 @@ class read_DSI_doc_file:
         worksheet.merge_range('G7:H7', "YAKLAŞIK KOT", f_text2)
         worksheet.write('I7', self.altitude, f_text2)
         worksheet.write('J7', "m", f_text2)
-        worksheet.merge_range('A8:C8', "GÖZLEM SÜRESİ", f_text2)
-        worksheet.write('D8', self.obs_duration, f_text2)
-        worksheet.merge_range('A9:C9', "ORTALAMA AKIMLAR", f_text2)
-        worksheet.merge_range('D9:M9', self.mean_flow, f_text2)
-        worksheet.merge_range(9,0,12,2, "ANLIK EN ÇOK VE EN AZ AKIMLAR", f_text2_w)
+        if self.docfile_type == 1:
+            worksheet.merge_range('A8:C8', "GÖZLEM SÜRESİ", f_text2)
+            worksheet.write('D8', self.obs_duration, f_text2)
+            worksheet.merge_range('A9:C9', "ORTALAMA AKIMLAR", f_text2)
+            worksheet.merge_range('D9:M9', self.mean_flow, f_text2)
+            worksheet.merge_range(9,0,12,2, "ANLIK EN ÇOK VE EN AZ AKIMLAR", f_text2_w)
 
-        for row, data in enumerate(self.stats_InstFlow):
-            worksheet.write(row+9, 8, 'm3/sn', f_text2)
-            for col_index, item in enumerate(data):
-                if col_index == 0:
-                    worksheet.merge_range(row+9,col_index+3, row+9, col_index+6, item, f_text2)
-                elif col_index == 2:
-                    worksheet.write(row+9, col_index+7, item, f_text2)
+            for row, data in enumerate(self.stats_InstFlow):
+                worksheet.write(row+9, 8, 'm3/sn', f_text2)
+                for col_index, item in enumerate(data):
+                    if col_index == 0:
+                        worksheet.merge_range(row+9,col_index+3, row+9, col_index+6, item, f_text2)
+                    elif col_index == 2:
+                        worksheet.write(row+9, col_index+7, item, f_text2)
+                    else:
+                        worksheet.write(row+9, col_index+6, item, f_text2)
+                
+
+            worksheet.write('G14', self.rating_info, f_text1)
+            col = 3
+            for row, data in enumerate(self.rating_table):
+                if row == 0:
+                    worksheet.write_row(row+14, col, data, f_text5)
+                else:    
+                    worksheet.write_row(row+14, col, data, f_text1)
+
+            worksheet.set_row(20, 22.5)
+            worksheet.merge_range('A21:M21', self.flow_info, f_text4)
+            col = 0
+            for row, data in enumerate(self.streamflow):
+                if row == 0 :
+                    worksheet.write_row(row+21, col, data, f_text6)
+                elif row ==31 :
+                    worksheet.write_row(row+21, col, data, f_text7)
+                elif row in range(32, 38):
+                    worksheet.write_row(row+21, col, data, f_text8)
                 else:
-                    worksheet.write(row+9, col_index+6, item, f_text2)
-            
+                    worksheet.write_row(row+21, col, data, f_text1)
 
-        worksheet.write('G14', self.rating_info, f_text1)
-        col = 3
-        for row, data in enumerate(self.rating_table):
-            if row == 0:
-                worksheet.write_row(row+14, col, data, f_text5)
-            else:    
-                worksheet.write_row(row+14, col, data, f_text1)
-
-        worksheet.set_row(20, 22.5)
-        worksheet.merge_range('A21:M21', self.flow_info, f_text4)
-        col = 0
-        for row, data in enumerate(self.streamflow):
-            if row == 0 :
-                worksheet.write_row(row+21, col, data, f_text6)
-            elif row ==31 :
-                worksheet.write_row(row+21, col, data, f_text7)
-            elif row in range(32, 38):
-                worksheet.write_row(row+21, col, data, f_text8)
-            else:
-                worksheet.write_row(row+21, col, data, f_text1)
-
-        worksheet.merge_range('A60:M60', self.footnote, f_text6)
+            worksheet.merge_range('A60:M60', self.footnote, f_text6)
+        
+        elif self.docfile_type == 2:
+            worksheet.set_row(20, 22.5)
+            worksheet.merge_range('A8:M8', self.flow_info, f_text4)
+            col = 0
+            for row, data in enumerate(self.streamflow):
+                if row == 0 :
+                    worksheet.write_row(row+8, col, data, f_text6)
+                elif row ==31 :
+                    worksheet.write_row(row+8, col, data, f_text7)
+                elif row in range(32, 38):
+                    worksheet.write_row(row+8, col, data, f_text8)
+                else:
+                    worksheet.write_row(row+8, col, data, f_text1)
         
         workbook.close()
